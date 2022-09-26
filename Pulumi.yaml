@@ -1,0 +1,3 @@
+name: pulumi-infra-on-the-cloud-challenge
+description: Pulumi IasC for Infra on the Cloud challenge
+runtime: nodejs
