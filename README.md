@@ -1,4 +1,5 @@
 # pulumi-infra-in-the-cloud-challenge
+> Work In Progress
 
 ## Pre-requisites
 
