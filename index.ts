@@ -1,6 +1,7 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as awsx from "@pulumi/awsx";
+let config = new pulumi.Config();
 
 const tags = {
     ChallengeName: "InfrastructureOnTheCloud",
@@ -50,9 +51,11 @@ curl -o /home/ec2-user/carrier https://raw.githubusercontent.com/SMontiel/ec2-in
 chmod +x /home/ec2-user/carrier
 /home/ec2-user/carrier &`
 
-const keyPair = new aws.ec2.KeyPair("ssh-key", {
-    keyName: "ssh-key",
-    publicKey: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHwUOfeoVxnSmfHYfUOg9Yufomu2c9V8mJbTN2fDQ+l5 salvador.montiel@wizeline.com",
+let publicKey = config.require("publicKey");
+const keyName = "ssh-key";
+const keyPair = new aws.ec2.KeyPair(keyName, {
+    keyName: keyName,
+    publicKey: publicKey,
     tags: tags
 });
 
@@ -61,10 +64,10 @@ const appServer = new aws.ec2.Instance("app-server", {
     ami: ami.id,
     userData: userData,
     vpcSecurityGroupIds: [ingressGroup.id],
-    keyName: "ssh-key",
+    keyName: keyName,
     tags: tags
 });
 
 export const publicIp = appServer.publicIp;
 export const publicHostName = appServer.publicDns;
-export const keyName = appServer.keyName
+export const publicURL = appServer.publicDns.apply(dns => `http://${dns}:8080`)
