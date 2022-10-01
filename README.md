@@ -14,6 +14,7 @@
   pulumi config set aws:region your_region
   # Optional
   pulumi config set publicKey (cat ~/.ssh/id_ed25519.pub)
+  pulumi config set pgPassword your_postgres_password
   ```
 
 ## Provisioning
@@ -26,4 +27,5 @@ pulumi up --diff
 
 ``` bash
 ssh -i "~/.ssh/id_ed25519.pub" ec2-user@(pulumi stack output publicIp)
+docker exec -it postgresql psql -h localhost -U postgres -d infra-challenge
 ```
