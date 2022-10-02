@@ -82,7 +82,7 @@ echo '${awsLogsConf}' > /etc/awslogs/awslogs.conf
 service awslogs start
 usermod -aG docker ec2-user
 echo '${configJson}' > /config.json
-docker run --name postgresql -e POSTGRES_DB=${pgDb} -e POSTGRES_USER=${pgUser} -e POSTGRES_PASSWORD=${pgPassword} -p 5432:5432 -v /data:/var/lib/postgresql/data -d postgres
+docker run --log-driver=awslogs --log-opt awslogs-region=us-east-1 --log-opt awslogs-group=/carrier/postgres/log --name postgresql -e POSTGRES_DB=${pgDb} -e POSTGRES_USER=${pgUser} -e POSTGRES_PASSWORD=${pgPassword} -p 5432:5432 -v /data:/var/lib/postgresql/data -d postgres
 curl -o /home/ec2-user/carrier https://raw.githubusercontent.com/SMontiel/ec2-instance-terraform/main/carrier_linux
 sleep 15s
 echo '${dbSchema}' | docker exec -i postgresql psql -h localhost -U ${pgUser} -d ${pgDb}

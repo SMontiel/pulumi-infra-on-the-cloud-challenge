@@ -23,7 +23,12 @@ const carrierLogGroup = new aws.cloudwatch.LogGroup("carrier-log-group", {
     tags: tags
 });
 
-carrierLogGroup.arn.apply(arn => {
+const postgresLogGroup = new aws.cloudwatch.LogGroup("postgres-log-group", {
+    name: "/carrier/postgres/log",
+    retentionInDays: 1,
+    tags: tags
+});
+pulumi.all([carrierLogGroup.arn, postgresLogGroup.arn]).apply(([carrierArn, postgresArn]) => {
     const logGroupPolicy = new aws.iam.Policy("log-group-policy", {
         policy: JSON.stringify({
             Version: "2012-10-17",
@@ -35,7 +40,10 @@ carrierLogGroup.arn.apply(arn => {
                     "logs:DescribeLogStreams"
                 ],
                 Effect: "Allow",
-                Resource: arn + ":*"
+                Resource: [
+                    carrierArn + ":*",
+                    postgresArn + ":*"
+                ]
             }]
         }),
         tags: tags
