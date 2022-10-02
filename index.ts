@@ -1,6 +1,8 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as awsx from "@pulumi/awsx";
+import { tags } from "./common"
+import { ec2InstanceProfile } from "./iam";
 
 let config = new pulumi.Config();
 const pgDb = "infra-challenge";
@@ -8,12 +10,6 @@ const pgUser = "postgres";
 const pgPassword = config.require("pgPassword");
 const publicKey = config.require("publicKey");
 const keyName = "ssh-key";
-
-const tags = {
-    ChallengeName: "InfrastructureOnTheCloud",
-    Participant: "Salvador Montiel",
-    Provisioner: "Pulumi"
-};
 
 const ingressGroup = new aws.ec2.SecurityGroup("app-server-secgroup", {
     ingress: [
@@ -68,10 +64,22 @@ const configJson = `{
   "password": "${pgPassword}",
   "ssl": "disable"
 }`;
+const awsLogsConf = `
+[general]
+state_file = /var/lib/awslogs/agent-state
+[/carrier/app/log]
+datetime_format = %b %d %H:%M:%S
+file = /carrier.log
+buffer_duration = 5000
+log_stream_name = {instance_id}
+initial_position = start_of_file
+log_group_name = /carrier/app/log`;
 const userData = `#! /bin/sh
 yum update -y
-yum install -y docker
+yum install -y docker awslogs
 service docker start
+echo '${awsLogsConf}' > /etc/awslogs/awslogs.conf
+service awslogs start
 usermod -aG docker ec2-user
 echo '${configJson}' > /config.json
 docker run --name postgresql -e POSTGRES_DB=${pgDb} -e POSTGRES_USER=${pgUser} -e POSTGRES_PASSWORD=${pgPassword} -p 5432:5432 -v /data:/var/lib/postgresql/data -d postgres
@@ -94,6 +102,7 @@ const appServer = new aws.ec2.Instance("app-server", {
     userDataReplaceOnChange: true,
     vpcSecurityGroupIds: [ingressGroup.id],
     keyName: keyName,
+    iamInstanceProfile: ec2InstanceProfile,
     tags: tags
 });
 
